@@ -19,9 +19,9 @@ public class MorseEngine {
 		byte[] Sound;
 	}
 	
-	private String AsciiToMorse(char input) {
+	private char[] AsciiToMorse(char[] input) {
 		
-		Map<Character, String> morse = new HashMap<Character, String>() {{
+		Map<Character, String> morseCode = new HashMap<Character, String>() {{
 			put('A', ".-");
 			put('B', "-...");
 			put('C', "-.-.");
@@ -61,9 +61,17 @@ public class MorseEngine {
 			put(' ', " "); // Short break pass-through
 		}};
 		
-		String output = morse.get(Character.toUpperCase(input));
-		if (output == null || output.isEmpty()) output = " ";
-		
+		char[] output = new char[] {};
+		for (int i = 0; i < input.length; i++) {
+			char upperInputItem = Character.toUpperCase(input[i]);
+			if(morseCode.containsKey(upperInputItem)) {
+				char[] morse = morseCode.get(upperInputItem).toCharArray();
+				char[] newOutput = new char[output.length + morse.length];						// Create a new array with sum of existing and morse arrays
+				System.arraycopy(output, 0, newOutput, 0, output.length);						// Copy existing array into new array
+				System.arraycopy(morse, 0, newOutput, output.length > 0 ? output.length : 0, morse.length);	// Copy morse array into new array
+				output = newOutput;																// Set output
+			}
+		}
 		return output;
 	}
 	
@@ -117,40 +125,45 @@ public class MorseEngine {
 	public void TextToTones(String text, SynthesisCallback callback) {
 		
 		final double FREQUENCY = 1000;
-		final int SAMPLE_RATE = 44100;
+		final int SAMPLE_RATE = 8000;
 		
-		//List<Tone> tones = new ArrayList<Tone>();
+		int totalBytes = 0;
+		
 		//int lastLength = 0;
 		// Map ASCII characters to Mores strings
-		char[] asciiChars = text.toCharArray();
-		for (int i = 0; i < asciiChars.length; i++) {
-			String morse = AsciiToMorse(asciiChars[i]);
-			
-			// Map Morse characters to tones
-			char[] morseChars = morse.toCharArray();
-			for (int j = 0; j < morseChars.length; j++) {
-			
-				int duration = GetToneDuration(morseChars[j]);	
-				//tones.add(GenerateTone(duration, SAMPLE_RATE, FREQUENCY));
-				Tone tone = GenerateTone(duration, SAMPLE_RATE, morseChars[j] == ' ' ? 0 : FREQUENCY);
-				
-				Tone rest = GenerateTone(1000, SAMPLE_RATE, 0);
-				
-				ByteBuffer buffer = ByteBuffer.allocate(tone.Sound.length + rest.Sound.length);
-				buffer.put(tone.Sound);
-				buffer.put(rest.Sound);
-				buffer.rewind();
-				while (buffer.hasRemaining()) {
-					int chunk = Math.min(2, buffer.remaining());
-					byte[] reader = new byte[chunk];
-					buffer.get(reader);
-					callback.audioAvailable(reader, 0, chunk);
-				}
-				//callback.audioAvailable(tone.Sound, lastLength, tone.Sound.length);
-				//lastLength += tone.Sound.length;
-			}
+		char[] morseChars = AsciiToMorse(text.toCharArray());
 		
+		// Map Morse characters to tones
+		List<Tone> tones = new ArrayList<Tone>();
+		for (int i = 0; i < morseChars.length; i++) {
+		
+			int duration = GetToneDuration(morseChars[i]);	
+			
+			Tone tone = GenerateTone(duration, SAMPLE_RATE, morseChars[i] == ' ' ? 0 : FREQUENCY);
+			tones.add(tone);
+			totalBytes += tone.Sound.length;
+			Tone rest = GenerateTone(1000, SAMPLE_RATE, 0);
+			tones.add(rest);
+			totalBytes += rest.Sound.length;
 		}
+		
+		ByteBuffer buffer = ByteBuffer.allocate(totalBytes);
+		for (int j = 0; j < tones.size(); j++)
+		{
+			Tone tone = tones.get(j);
+			buffer.put(tone.Sound);			
+		}
+		buffer.rewind();
+		
+		while (buffer.hasRemaining()) {
+			int chunk = Math.min(256, buffer.remaining());
+			byte[] reader = new byte[chunk];
+			buffer.get(reader);
+			callback.audioAvailable(reader, 0, chunk);
+		}
+		
+		//callback.audioAvailable(tone.Sound, lastLength, tone.Sound.length);
+		//lastLength += tone.Sound.length;
 		
 		//return tones.toArray(new Tone[tones.size()]);
 		

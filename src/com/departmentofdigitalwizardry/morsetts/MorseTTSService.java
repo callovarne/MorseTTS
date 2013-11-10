@@ -48,13 +48,12 @@ public class MorseTTSService extends TextToSpeechService {
 	@Override
 	protected int onIsLanguageAvailable(String lang, String country, String variant) {
 		
-		return lang == DEFAULT_LANG ? TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE : TextToSpeech.LANG_NOT_SUPPORTED;
-//		boolean match = lang.equalsIgnoreCase(DEFAULT_LANG);
-//		if (match) {
-//			return TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE;
-//		} else {
-//			return TextToSpeech.LANG_NOT_SUPPORTED;
-//		}
+		boolean match = lang.equalsIgnoreCase(DEFAULT_LANG);
+		if (match) {
+			return TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE;
+		} else {
+			return TextToSpeech.LANG_NOT_SUPPORTED;
+		}
 		
 	}
 	
