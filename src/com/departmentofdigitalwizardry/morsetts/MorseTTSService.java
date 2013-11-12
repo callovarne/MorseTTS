@@ -4,6 +4,7 @@ import java.util.*;
 import android.speech.tts.*;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.AssetManager;
 import android.media.AudioFormat;
 import android.speech.tts.SynthesisCallback;
 import android.speech.tts.SynthesisRequest;
@@ -75,9 +76,11 @@ public class MorseTTSService extends TextToSpeechService {
 		
 		this.callback = callback;
 		
-		callback.start(44100, AudioFormat.ENCODING_PCM_16BIT, 1);
+		callback.start(8000, AudioFormat.ENCODING_PCM_16BIT, 1);
 		
-		engine.TextToTones(text, callback);
+		AssetManager assetManager = this.getAssets();
+		
+		engine.TextToTones(text, callback, assetManager);
 //		// Get tones
 //		MorseEngine.Tone[] tones = engine.TextToTones(text);
 //		

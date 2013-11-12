@@ -1,15 +1,21 @@
 package com.departmentofdigitalwizardry.morsetts;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import android.content.res.AssetManager;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.speech.tts.SynthesisCallback;
+import android.util.Log;
+import android.content.res.*;
 
 public class MorseEngine {
 	
@@ -18,6 +24,12 @@ public class MorseEngine {
 		int Duration;
 		byte[] Sound;
 	}
+	
+	final int DIT = 100;
+	final int DASH = 300;
+	final int BREAK_SHORT = 300;
+	final int BREAK_LETTER = 500;
+	final int BREAK_LONG = 700;
 	
 	private char[] AsciiToMorse(char[] input) {
 		
@@ -65,7 +77,7 @@ public class MorseEngine {
 		for (int i = 0; i < input.length; i++) {
 			char upperInputItem = Character.toUpperCase(input[i]);
 			if(morseCode.containsKey(upperInputItem)) {
-				char[] morse = morseCode.get(upperInputItem).toCharArray();
+				char[] morse = (morseCode.get(upperInputItem) + "_").toCharArray();
 				char[] newOutput = new char[output.length + morse.length];						// Create a new array with sum of existing and morse arrays
 				System.arraycopy(output, 0, newOutput, 0, output.length);						// Copy existing array into new array
 				System.arraycopy(morse, 0, newOutput, output.length > 0 ? output.length : 0, morse.length);	// Copy morse array into new array
@@ -77,15 +89,11 @@ public class MorseEngine {
 	
 	private int GetToneDuration(char input) {
 		
-		final int DIT = 500;
-		final int DASH = 1250;
-		final int BREAK_SHORT = 300;
-		//final int BREAK_LONG = 700;
-		
 		Map<Character, Integer> durations = new HashMap<Character, Integer>() {{
 			put('.', DIT);
 			put('-', DASH);
-			put(' ', BREAK_SHORT);
+			put(' ', BREAK_LONG);
+			put('_', BREAK_LETTER);
 		}};
 		
 		return durations.get(input);
@@ -97,7 +105,7 @@ public class MorseEngine {
 		 *	See http://stackoverflow.com/questions/2413426/playing-an-arbitrary-tone-with-android
 		 */
 		 
-		final int samples = (int)Math.round((duration / 1000) * sampleRate);
+		final int samples = (int)Math.ceil((duration / 1000D) * (double)sampleRate);
 		double sample[] = new double[samples];
 		
 		
@@ -122,7 +130,7 @@ public class MorseEngine {
 		
 	}
 	
-	public void TextToTones(String text, SynthesisCallback callback) {
+	public synchronized void TextToTones(String text, SynthesisCallback callback, AssetManager assetManager) {
 		
 		final double FREQUENCY = 1000;
 		final int SAMPLE_RATE = 8000;
@@ -139,10 +147,10 @@ public class MorseEngine {
 		
 			int duration = GetToneDuration(morseChars[i]);	
 			
-			Tone tone = GenerateTone(duration, SAMPLE_RATE, morseChars[i] == ' ' ? 0 : FREQUENCY);
+			Tone tone = GenerateTone(duration, SAMPLE_RATE, (morseChars[i] == ' ' | morseChars[i] == '_') ? 0 : FREQUENCY);
 			tones.add(tone);
 			totalBytes += tone.Sound.length;
-			Tone rest = GenerateTone(1000, SAMPLE_RATE, 0);
+			Tone rest = GenerateTone(BREAK_SHORT, SAMPLE_RATE, 0); // Add letter spacing
 			tones.add(rest);
 			totalBytes += rest.Sound.length;
 		}
@@ -156,7 +164,7 @@ public class MorseEngine {
 		buffer.rewind();
 		
 		while (buffer.hasRemaining()) {
-			int chunk = Math.min(256, buffer.remaining());
+			int chunk = Math.min(callback.getMaxBufferSize(), buffer.remaining());
 			byte[] reader = new byte[chunk];
 			buffer.get(reader);
 			callback.audioAvailable(reader, 0, chunk);
