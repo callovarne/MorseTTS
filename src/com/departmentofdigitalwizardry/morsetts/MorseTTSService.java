@@ -76,11 +76,11 @@ public class MorseTTSService extends TextToSpeechService {
 		
 		this.callback = callback;
 		
+		this.engine.setTimeFactor((request.getSpeechRate() / 100) * 25);
+		
 		callback.start(8000, AudioFormat.ENCODING_PCM_16BIT, 1);
 		
-		AssetManager assetManager = this.getAssets();
-		
-		engine.TextToTones(text, callback, assetManager);
+		engine.TextToTones(text, callback);
 //		// Get tones
 //		MorseEngine.Tone[] tones = engine.TextToTones(text);
 //		

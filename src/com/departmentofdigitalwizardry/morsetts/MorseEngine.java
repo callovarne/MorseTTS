@@ -66,6 +66,10 @@ public class MorseEngine {
 		this.time = new Time();
 	}
 	
+	public void setTimeFactor(int factor) {
+		this.time = new Time(factor);
+	}
+	
 	private char[] AsciiToMorse(char[] input) {
 		
 		Map<Character, String> morseCode = new HashMap<Character, String>() {{
@@ -165,14 +169,13 @@ public class MorseEngine {
 		
 	}
 	
-	public synchronized void TextToTones(String text, SynthesisCallback callback, AssetManager assetManager) {
+	public synchronized void TextToTones(String text, SynthesisCallback callback) {
 		
 		final double FREQUENCY = 1000;
 		final int SAMPLE_RATE = 8000;
 		
 		int totalBytes = 0;
 		
-		//int lastLength = 0;
 		// Map ASCII characters to Mores strings
 		char[] morseChars = AsciiToMorse(text.toCharArray());
 		
@@ -204,9 +207,6 @@ public class MorseEngine {
 			buffer.get(reader);
 			callback.audioAvailable(reader, 0, chunk);
 		}
-		
-		//callback.audioAvailable(tone.Sound, lastLength, tone.Sound.length);
-		//lastLength += tone.Sound.length;
 		
 		//return tones.toArray(new Tone[tones.size()]);
 		
