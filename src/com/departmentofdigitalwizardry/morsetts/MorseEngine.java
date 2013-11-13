@@ -25,11 +25,46 @@ public class MorseEngine {
 		byte[] Sound;
 	}
 	
-	final int DIT = 100;
-	final int DASH = 300;
-	final int BREAK_SHORT = 300;
-	final int BREAK_LETTER = 500;
-	final int BREAK_LONG = 700;
+	public class Time {
+		
+		private int factor;
+		
+		public Time() {
+			this.factor = 25;
+		}
+		public Time(int factor) {
+			this.factor = factor;
+		}
+		
+		public int Dit() {
+			return factor * 1;
+		}
+		
+		public int Dash() {
+			return factor * 3;
+		}
+		
+		// For between tones 
+		public int ShortBreak() {
+			return factor * 1;
+		}
+		
+		// For between letters
+		public int LetterBreak() {
+			return factor * 3;
+		}
+		
+		// For between words, 7x dot (6x to account for short breaks after every tone)
+		public int LongBreak() {
+			return factor * 6;
+		}
+	}
+	
+	private Time time;
+	
+	public MorseEngine() {
+		this.time = new Time();
+	}
 	
 	private char[] AsciiToMorse(char[] input) {
 		
@@ -90,10 +125,10 @@ public class MorseEngine {
 	private int GetToneDuration(char input) {
 		
 		Map<Character, Integer> durations = new HashMap<Character, Integer>() {{
-			put('.', DIT);
-			put('-', DASH);
-			put(' ', BREAK_LONG);
-			put('_', BREAK_LETTER);
+			put('.', time.Dit());
+			put('-', time.Dash());
+			put(' ', time.LongBreak());
+			put('_', time.LetterBreak());
 		}};
 		
 		return durations.get(input);
@@ -150,7 +185,7 @@ public class MorseEngine {
 			Tone tone = GenerateTone(duration, SAMPLE_RATE, (morseChars[i] == ' ' | morseChars[i] == '_') ? 0 : FREQUENCY);
 			tones.add(tone);
 			totalBytes += tone.Sound.length;
-			Tone rest = GenerateTone(BREAK_SHORT, SAMPLE_RATE, 0); // Add letter spacing
+			Tone rest = GenerateTone(time.ShortBreak(), SAMPLE_RATE, 0); // Add letter spacing
 			tones.add(rest);
 			totalBytes += rest.Sound.length;
 		}

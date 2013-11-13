@@ -15,7 +15,7 @@ public class GetSampleText extends Activity {
 		final int result = TextToSpeech.LANG_AVAILABLE;
 		final Intent data = new Intent();
 		
-		data.putExtra("sampleText", "This is a test.");
+		data.putExtra("sampleText", "This is a test. Pretty cool eh.");
 		
 		setResult(result, data);		
 		
